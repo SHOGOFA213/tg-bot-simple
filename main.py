@@ -24,10 +24,16 @@ def about(message):
     bot.reply_to(
         message,
         "🤖 Бот: tg-bot-simple\n"
-        "Автор: Shogofa\n"
+        "Автор: Shogofa Abdullahi\n"
         "Версия: 1.0\n"
         "Назначение: учебный проект"
     )
+
+
+@bot.message_handler(commands=['ping'])
+def ping(message):
+    bot.reply_to(message, "pong 🏓")
+
 
 if __name__ == "__main__":
  bot.infinity_polling(skip_pending=True)
