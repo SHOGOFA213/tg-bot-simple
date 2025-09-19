@@ -1,8 +1,5 @@
 # 🤖 tg-bot-simple
 
-
-Это мое фото:
-
 <img src="image/1.jpg" alt="Мое фото" width="150"/>
 
 
