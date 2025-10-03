@@ -39,7 +39,6 @@ pip install pytelegrambotapi python-dotenv requests
 5- Создайте файл .env
 Напишите:
 TOKEN=ваш_токен_от_BotFather
-Запустите бота
 
 Потом запустите бот через Терминал:
 python bot.py
