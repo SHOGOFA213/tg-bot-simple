@@ -33,8 +33,7 @@ def is_int_token(t: str) -> bool:
 #def start(message):
 # print(f"[PING] Пользователь {message.from_user.username} ({message.chat.id}) вызвал /start")
 # bot.reply_to(message, "@<25F! / F2>= ?5@2O= 1>F! 0?<H< /help")
-
-
+'''
 @bot.message_handler(commands=['help'])
 def help_cmd(message):
  print(f"[PING] Пользователь {message.from_user.username} ({message.chat.id}) вызвал /help")
@@ -45,9 +44,8 @@ def hello(message):
  print(f"[PING] Пользователь {message.from_user.username} ({message.chat.id}) вызвал /hello")
  bot.reply_to(message, "Привет! Я твой бот 😊")
 
-
-
-
+'''
+#keyboard
 def make_main_kb() -> types.ReplyKeyboardMarkup:
     kb = types.ReplyKeyboardMarkup(resize_keyboard=True)
     kb.row("О боте", "Сумма")
@@ -56,6 +54,7 @@ def make_main_kb() -> types.ReplyKeyboardMarkup:
     kb.row("/hide", "/show")
     return kb
 
+#start
 @bot.message_handler(commands=['start'])
 def hello(message):
     bot.reply_to(message, "😊", reply_markup=make_main_kb())
@@ -63,7 +62,7 @@ def hello(message):
 
 
 
-
+#about
 
 @bot.message_handler(commands=['about'])
 def about(message):
@@ -76,13 +75,14 @@ def about(message):
         "Назначение: учебный проект"
     )
 
+#ping
 
 @bot.message_handler(commands=['ping'])
 def ping(message):
     print(f"[PING] Пользователь {message.from_user.username} ({message.chat.id}) вызвал /ping")
     bot.reply_to(message, "pong 🏓")
 
-
+#sum
 @bot.message_handler(commands=['sum'])
 def cmd_sum(message):
     parts = message.text.split()   # тут должно быть parts
@@ -100,7 +100,7 @@ def cmd_sum(message):
 
 
 
-@bot.message_handler(funс = lambda m:m.text =="О Боте")
+@bot.message_handler(func = lambda m:m.text =="О Боте")
 def kb_about(m):
    bot.reply_to(m, "Я учебный бот/start, /help, /about, /sum, /echo")
 
@@ -132,7 +132,7 @@ def show_kb(m):
 
 
 
-
+#Confirm
 
 @bot.message_handler(commands=['confirm'])
 def confirm_cmd(m):
@@ -160,8 +160,8 @@ def on_confirm(c):
     else:
         bot.send_message(c.message.chat.id, "Оставлено без ответа 🤔")
 
-#weather
 
+#weather
 
 @bot.message_handler(commands=['weather'])
 def weather_cmd(message):
