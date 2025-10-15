@@ -3,6 +3,7 @@ from dotenv import load_dotenv
 import telebot
 import time
 import json
+from datetime import datetime
 
 # Загрузка переменных окружения
 load_dotenv()
@@ -136,6 +137,68 @@ def note_count(message):
     else:
         bot.reply_to(message, f"У вас {count} заметок.")
 
+  
+       
+@bot.message_handler(commands=['note_export'])
+def note_export(message):
+    if not notes:
+        bot.reply_to(message, "Нет заметок для экспорта.")
+        return
+    
+    # Создаем имя файла с временной меткой
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    filename = f"notes_{timestamp}.txt"
+    
+    try:
+        # Записываем заметки в файл
+        with open(filename, 'w', encoding='utf-8') as f:
+            f.write(f"Экспорт заметок от {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+            f.write(f"Всего заметок: {len(notes)}\n")
+            f.write("=" * 50 + "\n\n")
+            
+            for note_id, text in sorted(notes.items()):
+                f.write(f"Заметка #{note_id}:\n")
+                f.write(f"{text}\n")
+                f.write("-" * 30 + "\n")
+        
+        # Отправляем файл пользователю
+        with open(filename, 'rb') as f:
+            bot.send_document(message.chat.id, f, caption="Ваши заметки экспортированы в файл.")
+        
+        # Удаляем временный файл
+        os.remove(filename)
+        
+    except Exception as e:
+        bot.reply_to(message, f"Ошибка при экспорте: {str(e)}")
+
+
+
+
+
+
+@bot.message_handler(commands=['note_stats'])
+def note_stats(message):
+    # Здесь будет логика сбора статистики
+    # и создание ASCII-гистограммы
+    
+    stats = {
+        'Пн': 5,
+        'Вт': 8, 
+        'Ср': 3,
+        'Чт': 12,
+        'Пт': 7,
+        'Сб': 2,
+        'Вс': 4
+    }
+    
+    response = "Активность по заметкам:\n"
+    for day, count in stats.items():
+        bar = '█' * count  # Создаем строку из символов
+        response += f"{day}: {bar} {count}\n"
+    
+    bot.reply_to(message, response)
+
+    
 if __name__ == "__main__":
     print("Бот запускается...")
     bot.infinity_polling(skip_pending=True)
