@@ -5,6 +5,9 @@ from typing import List
 import telebot
 import logging
 import requests
+
+
+
 load_dotenv()
 TOKEN = os.getenv("TOKEN")
 if not TOKEN:
@@ -29,11 +32,11 @@ def is_int_token(t: str) -> bool:
 
 
 
-#@bot.message_handler(commands=['start'])
-#def start(message):
-# print(f"[PING] Пользователь {message.from_user.username} ({message.chat.id}) вызвал /start")
-# bot.reply_to(message, "@<25F! / F2>= ?5@2O= 1>F! 0?<H< /help")
-'''
+@bot.message_handler(commands=['start'])
+def start(message):
+ print(f"[PING] Пользователь {message.from_user.username} ({message.chat.id}) вызвал /start")
+ bot.reply_to(message, "@<25F! / F2>= ?5@2O= 1>F! 0?<H< /help")
+
 @bot.message_handler(commands=['help'])
 def help_cmd(message):
  print(f"[PING] Пользователь {message.from_user.username} ({message.chat.id}) вызвал /help")
@@ -44,7 +47,7 @@ def hello(message):
  print(f"[PING] Пользователь {message.from_user.username} ({message.chat.id}) вызвал /hello")
  bot.reply_to(message, "Привет! Я твой бот 😊")
 
-'''
+
 #keyboard
 def make_main_kb() -> types.ReplyKeyboardMarkup:
     kb = types.ReplyKeyboardMarkup(resize_keyboard=True)
@@ -196,7 +199,9 @@ def cmd_max(message):
         bot.reply_to(message, f"Максимум: {max(nums)}")
 
 
- 
+
+
+
 
 
 

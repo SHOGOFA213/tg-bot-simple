@@ -52,6 +52,19 @@ def init_db() -> None:
 
     CREATE INDEX IF NOT EXISTS idx_users_hour ON users(notify_hour);
     CREATE INDEX IF NOT EXISTS idx_users_sent ON users(last_sent_date);
+
+    CREATE TABLE IF NOT EXISTS models (
+    
+        id              INTEGER PRIMARY KEY,
+        key             TEXT NOT NULL UNIQUE,
+        lable           TEXT NOT NULL,
+        active          INTEGER NOT NULL DEFAULT 0 CHECK (active IN (0,1))
+
+    
+    );
+
+    CREATE UNIQUE INDEX IF NOT EXISTS ux_models_single_active ON models(active) WHERE active=1;
+
     """
     with _connect() as conn:
         conn.executescript(schema)
@@ -111,3 +124,32 @@ def list_due_users(today_str: str, hour: int) -> list[sqlite3.Row]:
 def mark_sent_today(user_id: int, today_str: str) -> None:
     with _connect() as conn:
         conn.execute("UPDATE users SET last_sent_date = ? WHERE user_id = ?", (today_str, user_id))
+
+
+
+def ensure_models() -> None:
+    """Добавляет стандартные модели, если таблица пуста."""
+    default_models = [
+        ("gpt-5", "GPT-5 (OpenAI)"),
+        ("gpt-4o-mini", "GPT-4o-mini"),
+        ("gpt-4o", "GPT-4o"),
+        ("claude-3.5-sonnet", "Claude 3.5 Sonnet"),
+        ("gemini-1.5-pro", "Gemini 1.5 Pro"),
+        ("mistral-large", "Mistral Large"),
+        ("llama-3.1-70b", "LLaMA 3.1 70B"),
+        ("qwen-2.5-72b", "Qwen 2.5 72B"),
+        ("mixtral-8x22b", "Mixtral 8x22B"),
+        ("command-r-plus", "Command-R Plus"),
+    ]
+
+    with _connect() as conn:
+        cur = conn.execute("SELECT COUNT(*) FROM models")
+        count = cur.fetchone()[0]
+        if count == 0:
+            conn.executemany(
+                "INSERT INTO models (key, lable, active) VALUES (?, ?, 0)",
+                default_models,
+            )
+            # По умолчанию активна первая
+            conn.execute("UPDATE models SET active = 1 WHERE key = ?", (default_models[0][0],))
+            log.info("Модели добавлены в таблицу: %d шт.", len(default_models))
