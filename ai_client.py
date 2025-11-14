@@ -1,41 +1,81 @@
-import time
-import random
+from __future__ import annotations
+import os, time, requests
+from dataclasses import dataclass
+from typing import Dict, List, Tuple
+from dotenv import load_dotenv
 
+load_dotenv()
+
+OPENROUTER_API = "https://openrouter.ai/api/v1/chat/completions"
+OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
+
+@dataclass
 class OpenRouterError(Exception):
-    """Класс ошибки OpenRouter с пояснением для пользователя."""
-    pass
+    status: int
+    msg: str
+    def __str__(self) -> str:
+        return f"[{self.status}] {self.msg}"
 
+def _friendly(status: int) -> str:
+    """Возвращает понятные сообщения об ошибках для пользователя"""
+    error_messages = {
+        400: "Неверный формат запроса.",
+        401: "Ключ OpenRouter отклонён. Проверьте OPENROUTER_API_KEY.",
+        403: "Нет прав доступа к модели.",
+        404: "Эндпоинт не найден. Проверьте URL /api/v1/chat/completions.",
+        429: "Превышены лимиты бесплатной модели. Попробуйте позднее.",
+        # Добавляем обработку серверных ошибок (задание 3)
+        500: "Ошибка 500 — внутренняя ошибка сервера OpenRouter. Попробуйте позже.",
+        502: "Ошибка 502 — плохой шлюз. Возможно, сервер перегружен.", 
+        503: "Ошибка 503 — сервис временно недоступен. Подождите немного.",
+        504: "Ошибка 504 — сервер не ответил вовремя. Повторите попытку.",
+    }
+    return error_messages.get(status, "Сервис недоступен. Повторите попытку позже.")
 
-def chat_once(messages, model, temperature=0.7, max_tokens=400):
+def chat_once(messages: List[Dict], *,
+              model: str,
+              temperature: float = 0.2,
+              max_tokens: int = 400,
+              timeout_s: int = 30) -> Tuple[str, int]:
     """
-    Имитация общения с ИИ.
-    Добавлена обработка ошибок 500, 502, 503, 504.
+    Реальный запрос к OpenRouter API с обработкой ошибок 500, 502, 503, 504
     """
-    start = time.time()
-    question = messages[-1]["content"]
-
-    # --- Случайное эмулирование серверных ошибок (5% вероятность) ---
-    possible_errors = [None, None, None, 500, 502, 503, 504]
-    err = random.choice(possible_errors)
-    if err in (500, 502, 503, 504):
-        messages_for_user = {
-            500: "Ошибка 500 — внутренняя ошибка сервера OpenRouter. Попробуйте позже.",
-            502: "Ошибка 502 — плохой шлюз. Возможно, сервер перегружен.",
-            503: "Ошибка 503 — сервис временно недоступен. Подождите немного.",
-            504: "Ошибка 504 — сервер не ответил вовремя. Повторите попытку.",
-        }
-        raise OpenRouterError(messages_for_user[err])
-
-    # --- Эмуляция нормального ответа ---
-    fake_answers = [
-        "Интересный вопрос! 🤔 Я думаю, что...",
-        "Хороший выбор темы! Вот что я думаю:",
-        "Позволь объяснить коротко:",
-        "Давай разберёмся вместе:",
-    ]
-    response = random.choice(fake_answers) + f" {question}"
-
-    # --- Время отклика (в мс) ---
-    ms = int((time.time() - start) * 1000)
-
-    return response, ms
+    if not OPENROUTER_API_KEY:
+        raise OpenRouterError(401, "Отсутствует OPENROUTER_API_KEY (.env).")
+    
+    headers = {
+        "Authorization": f"Bearer {OPENROUTER_API_KEY}",
+        "Content-Type": "application/json",
+    }
+    
+    payload = {
+        "model": model,
+        "messages": messages,
+        "temperature": temperature,
+        "max_tokens": max_tokens,
+    }
+    
+    t0 = time.perf_counter()
+    
+    try:
+        r = requests.post(OPENROUTER_API, json=payload, headers=headers, timeout=timeout_s)
+        dt_ms = int((time.perf_counter() - t0) * 1000)
+        
+        # Обработка HTTP ошибок включая 5xx (задание 3)
+        if r.status_code // 100 != 2:
+            raise OpenRouterError(r.status_code, _friendly(r.status_code))
+        
+        try:
+            data = r.json()
+            text = data["choices"][0]["message"]["content"]
+        except Exception:
+            raise OpenRouterError(500, "Неожиданная структура ответа OpenRouter.")
+        
+        return text, dt_ms
+        
+    except requests.exceptions.Timeout:
+        raise OpenRouterError(504, "Ошибка 504 — сервер не ответил вовремя. Повторите попытку.")
+    except requests.exceptions.ConnectionError:
+        raise OpenRouterError(503, "Ошибка 503 — сервис временно недоступен. Подождите немного.")
+    except Exception as e:
+        raise OpenRouterError(500, f"Внутренняя ошибка: {str(e)}")
